@@ -17,7 +17,7 @@ env:
   priority_levels: 4
   # Power: Table III gives a single TX power (1 dBm). Keep bins=1 for now (action still includes power);
   # we'll flip to distance-rule and drop power from the action in the next milestone.
-  power_rule: "bins"             # "bins" | "distance"
+  power_rule: "distance"             # "bins" | "distance"
   power_bins: 1
   tx_power_dbm_bins: [1]         # Table III: transmit power of vehicles = 1 dBm
   max_tasks_per_vehicle: 10      # Table III: number of tasks 0–10

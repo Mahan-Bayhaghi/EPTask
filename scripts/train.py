@@ -1,5 +1,5 @@
 from __future__ import annotations
-import argparse, os
+import argparse, os, yaml
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.logger import configure
@@ -14,15 +14,18 @@ def make_env(config_path: str, seed: int):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--config", type=str, default="../configs/small.yaml")
-    p.add_argument("--timesteps", type=int, default=30000)
-    p.add_argument("--logdir", type=str, default="../runs")
+    p.add_argument("--config", type=str, default="../configs/default.yaml")
+    p.add_argument("--timesteps", type=int, default=50000)
+    p.add_argument("--logdir", type=str, default="../runs/m1_rl")
     args = p.parse_args()
 
     cfg = load_config(args.config)
     os.makedirs(args.logdir, exist_ok=True)
-    set_global_seeds(cfg.get("seed", 42))
+    # snapshot config
+    with open(os.path.join(args.logdir, "used_config.yaml"), "w", encoding="utf-8") as f:
+        yaml.safe_dump(cfg, f)
 
+    set_global_seeds(cfg.get("seed", 42))
     env = DummyVecEnv([make_env(args.config, seed=cfg.get("seed", 42))])
 
     model = PPO("MultiInputPolicy", env,
