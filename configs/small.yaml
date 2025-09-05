@@ -1,0 +1,55 @@
+seed: 123
+device: cpu
+
+env:
+  horizon_steps: 300
+  max_vehicles: 12
+  num_edges: 2
+  include_cloud: true
+  top_k: 2
+  priority_levels: 4
+  power_bins: 3
+  power_rule: "bins"            # "bins" | "distance"
+  max_tasks_per_vehicle: 6
+  task_queue_capacity: 64
+
+  # Simplified placeholders
+  v2v_bandwidth_mhz: 5.0
+  v2i_bandwidth_mhz: 10.0
+  noise_dbm: -90.0
+  tx_power_dbm_bins: [0, 5, 10]
+  vehicle_compute_mips: 30.0
+  edge_compute_mips: 200.0
+  cloud_compute_mips: 800.0
+  energy_coeff_tx: 8.0e-7
+  energy_coeff_compute: 1.5e-9
+  link_fair_share: true
+
+  # Arrivals & task distributions
+  task_arrival_rate: 0.6
+  task_size_bits: [5.0e5, 2.0e6]
+  task_cycles: [1.0e7, 5.0e7]
+  deadline_range: [30, 120]
+  emax_range: [0.02, 0.15]
+
+  # weights for any distance/workload scoring (if used)
+  w_distance: 0.5
+  w_workload: 0.5
+
+reward:
+  lambda_time: 1.0
+  lambda_energy: 1.0
+  lambda_deadline: 5.0
+
+ppo:
+  total_timesteps: 30000
+  n_steps: 1024
+  batch_size: 256
+  n_epochs: 4
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.01
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  learning_rate: 0.0003
