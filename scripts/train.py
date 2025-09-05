@@ -15,8 +15,8 @@ def make_env(config_path: str, seed: int):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--config", type=str, default="../configs/default.yaml")
-    p.add_argument("--timesteps", type=int, default=50000)
-    p.add_argument("--logdir", type=str, default="../runs/m1_rl")
+    p.add_argument("--timesteps", type=int, default=100000)
+    p.add_argument("--logdir", type=str, default="../runs/ppo")
     args = p.parse_args()
 
     cfg = load_config(args.config)

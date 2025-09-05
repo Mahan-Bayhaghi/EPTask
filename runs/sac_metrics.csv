@@ -1,0 +1,7 @@
+metric,value
+completion_time_mean,6.952782131661442
+completion_time_p95,17.0
+energy_mean,2.884998510102737
+miss_rate,0.8699419019467944
+fairness,0.8716028961068508
+throughput_tasks,5104
