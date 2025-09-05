@@ -10,6 +10,11 @@ from .generators import sample_tasks, init_vehicles, Task
 
 @dataclass
 class EPTaskEnvConfig:
+    # arrival model (new)
+    arrival_model: str = "bernoulli"   # "bernoulli" | "poisson"
+    task_arrival_lambda: float = 0.8   # mean tasks per step per vehicle (Poisson)
+    task_burst_max: int = 999          # cap burst size to avoid huge spikes
+
     horizon_steps: int = 600
     max_vehicles: int = 50
     num_edges: int = 8
@@ -77,6 +82,11 @@ class EPTaskEnv(gym.Env):
         def _pair_int(x):
             a, b = _pair_float(x);
             return int(round(a)), int(round(b))
+
+        # arrivals
+        self.cfg.arrival_model = str(getattr(self.cfg, "arrival_model", "bernoulli")).lower()
+        self.cfg.task_arrival_lambda = _float(getattr(self.cfg, "task_arrival_lambda", 0.8))
+        self.cfg.task_burst_max = _int(getattr(self.cfg, "task_burst_max", 999))
 
         self.cfg.v2v_bandwidth_mhz = _float(self.cfg.v2v_bandwidth_mhz)
         self.cfg.v2i_bandwidth_mhz = _float(self.cfg.v2i_bandwidth_mhz)
@@ -231,9 +241,17 @@ class EPTaskEnv(gym.Env):
         return float(bins[-1])
 
     def _advance_time(self):
-        # arrivals (Bernoulli approx to Poisson)
+        # arrivals
         for v in self.vehicles:
-            if self.rng.random() < min(1.0, self.cfg.task_arrival_rate):
+            model = getattr(self.cfg, "arrival_model", "bernoulli")
+            if model == "poisson":
+                lam = float(getattr(self.cfg, "task_arrival_lambda", 0.8))
+                k = int(self.rng.poisson(lam))
+                k = min(k, int(getattr(self.cfg, "task_burst_max", 999)))
+            else:
+                k = 1 if self.rng.random() < min(1.0, self.cfg.task_arrival_rate) else 0
+
+            for _ in range(k):
                 if len(v.queue) < self.cfg.task_queue_capacity:
                     new_tasks = sample_tasks(self.rng, 1, {
                         "task_size_bits": self.cfg.task_size_bits,

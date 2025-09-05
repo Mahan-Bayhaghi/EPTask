@@ -2,35 +2,58 @@ seed: 42
 device: cpu
 
 env:
+  arrival_model: "poisson"   # "bernoulli" | "poisson"
+  task_arrival_lambda: 1.3   # mean tasks/step/vehicle ( >1 → backlog grows )
+  task_burst_max: 5          # optional cap to keep it bounded
+  deadline_range: [ 20, 80 ]   # not super tight; misses will still occur due to backlog
+
+  # Episode + structure (paper: "number of steps in each episode = 2048" is a PPO rollout size;
+  # we keep env horizon separate so episodes terminate in the sim too)
   horizon_steps: 600
-  max_vehicles: 50
-  num_edges: 8
+  max_vehicles: 50               # Table III: 10–50 (we allow up to 50; arrivals control actives)
+  num_edges: 8                   # Table III
   include_cloud: true
   top_k: 4
-  priority_levels: 4            # configurable
-  power_bins: 5                 # configurable
-  power_rule: "bins"            # "bins" | "distance"
-  max_tasks_per_vehicle: 10
+  priority_levels: 4
+  # Power: Table III gives a single TX power (1 dBm). Keep bins=1 for now (action still includes power);
+  # we'll flip to distance-rule and drop power from the action in the next milestone.
+  power_rule: "bins"             # "bins" | "distance"
+  power_bins: 1
+  tx_power_dbm_bins: [1]         # Table III: transmit power of vehicles = 1 dBm
+  max_tasks_per_vehicle: 10      # Table III: number of tasks 0–10
   task_queue_capacity: 128
 
-  # --- placeholders: replace with Table III values ---
-  v2v_bandwidth_mhz: 10.0
-  v2i_bandwidth_mhz: 20.0
-  noise_dbm: -90.0
-  tx_power_dbm_bins: [-5, 0, 5, 10, 15]
-  vehicle_compute_mips: 50.0
-  edge_compute_mips: 500.0
-  cloud_compute_mips: 2000.0
-  energy_coeff_tx: 1.0e-6
-  energy_coeff_compute: 1.0e-9
+  # Radio / noise (Table III)
+  # Edge/V2I bandwidth = 100 MHz; V2V not specified → keep a modest 20 MHz for realism
+  v2v_bandwidth_mhz: 20.0
+  v2i_bandwidth_mhz: 100.0       # Table III: bandwidth of edge server = 100 MHz
+  # Table III: white Gaussian noise = -174 dBm/Hz → ≈ -94 dBm over 100 MHz; use -95 dBm proxy.
+  noise_dbm: -95.0
+
+  # Compute capacities (convert "cpu cycles/s" to MIPS: 1e9 cycles/s ≈ 1000 MIPS)
+  vehicle_compute_mips: 1000.0   # Table III: vehicles = 1 cpu cycles/s → ~1 GHz
+  edge_compute_mips: 2000.0      # Table III: edge servers = 2 cpu cycles/s → ~2 GHz
+  cloud_compute_mips: 5000.0     # Not specified; keep larger to represent cloud advantage
+
+  # Energy model (Table III lists ξ=1e-11, γ=2; we fold them as coarse proxies)
+  energy_coeff_tx: 1.0e-9        # TX energy scale (tuned proxy; small since dBm already scales)
+  energy_coeff_compute: 2.0e-11  # ≈ ξ * γ from Table III
+
   link_fair_share: true
 
-  task_arrival_rate: 0.8
-  task_size_bits: [1.0e6, 4.0e6]
-  task_cycles: [5.0e7, 2.0e8]
-  deadline_range: [50, 200]
-  emax_range: [0.05, 0.3]
+  # Task generation (Table III)
+  # data size S: 2–20 Mb → 2e6..20e6 bits
+  task_size_bits: [2.0e6, 20.0e6]
+  # required CPU cycles C: 2–20 "cpu cycles" → interpret as 2e9..20e9 cycles (typical in MEC papers)
+  task_cycles: [2.0e9, 20.0e9]
+  # arrivals not specified; keep 0.8 per-vehicle-per-step so the system is moderately loaded
+  task_arrival_rate: 1.0
+  # deadlines not specified; keep earlier defaults (in steps ≈ seconds). We can tighten later if needed.
+  deadline_range: [5, 20]
+  # per-task energy cap not explicit; keep a normalized window
+  emax_range: [0.05, 0.30]
 
+  # Optional weights (selection scoring if used later)
   w_distance: 0.5
   w_workload: 0.5
 
@@ -39,15 +62,16 @@ reward:
   lambda_energy: 1.0
   lambda_deadline: 5.0
 
+# PPO hyperparameters (Table III)
 ppo:
-  total_timesteps: 200000
-  n_steps: 2048
-  batch_size: 512
+  learning_rate: 0.0003          # Table III
+  n_steps: 2048                   # Table III: number of steps in each episode
+  batch_size: 32                  # Table III: mini-batch size
   n_epochs: 4
   gamma: 0.99
   gae_lambda: 0.95
   clip_range: 0.2
-  ent_coef: 0.01
+  ent_coef: 0.01                  # Table III: entropy loss coefficient
   vf_coef: 0.5
   max_grad_norm: 0.5
-  learning_rate: 0.0003
+  total_timesteps: 200000
