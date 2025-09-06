@@ -1,0 +1,7 @@
+metric,mean,std,n
+completion_time_mean,7.213024,0.000000,1
+completion_time_p95,17.000000,0.000000,1
+energy_mean,2.899185,0.000000,1
+fairness,0.867544,0.000000,1
+miss_rate,0.885312,0.000000,1
+throughput_tasks,5037.000000,0.000000,1

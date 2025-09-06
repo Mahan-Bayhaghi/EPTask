@@ -18,8 +18,8 @@ def load_metric_csv(path):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--pattern", required=True, help="glob, e.g., runs/*_metrics_seed*.csv")
-    p.add_argument("--out", default="../runs/summary.csv")
+    p.add_argument("--pattern", default="../runs/ppo_metrics*.csv", help="glob, e.g., runs/*_metrics_seed*.csv")
+    p.add_argument("--out", default="../runs/ppo_summary.csv")
     args = p.parse_args()
 
     files = sorted(glob.glob(args.pattern))
